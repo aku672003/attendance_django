@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HanuAI-Attendance</title>
+
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+    <!-- External Stylesheet -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-title">Employee Attendance System</div>
+                <div class="login-subtitle">Sign in to mark your attendance</div>
+
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" id="loginUsername" class="form-control" placeholder="Enter your username"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="loginPassword" class="form-control"
+                                placeholder="Enter your password" required>
+                            <button type="button" class="toggle-password-btn" data-target="loginPassword">👁</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full-width" id="loginBtn">
+                        <span id="loginBtnText">Sign In</span>
+                        <span id="loginSpinner" class="loading-spinner hidden"></span>
+                    </button>
+                </form>
+
+                <div class="signup-link">
+                    <p>New employee? <a href="#" onclick="showScreen('signupScreen')">Sign up here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Screen -->
+    <div id="signupScreen" class="screen">
+        <div class="login-container">
+            <div class="login-card" style="max-width: 600px;">
+                <div class="login-title">Create Your Account</div>
+                <div class="login-subtitle">Join our attendance system</div>
+
+                <form onsubmit="handleSignup(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="signupName" class="form-control" placeholder="Enter full name"
+                                required pattern="[A-Za-z ]+" title="Only alphabets and spaces allowed">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" id="signupPhone" class="form-control" placeholder="10-digit number"
+                                required pattern="[0-9]{10}">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="signupEmail" class="form-control" placeholder="Enter email" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Department</label>
+                            <select id="signupDepartment" class="form-control" required>
+                                <option value="">Select Department</option>
+                                <option value="IT">IT</option>
+                                <option value="HR">HR</option>
+                                <option value="Surveyors">Surveyors</option>
+                                <option value="Accounts">Accounts</option>
+                                <option value="Growth">Growth</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Primary Office</label>
+                            <select id="signupOffice" class="form-control" required>
+                                <option value="">Select Office</option>
+                                <option value="79">79 Office</option>
+                                <option value="105">105 Office</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" id="signupUsername" class="form-control" placeholder="Choose username"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="signupPassword" class="form-control"
+                                    placeholder="Create password" required minlength="6">
+                                <button type="button" class="toggle-password-btn"
+                                    data-target="signupPassword">👁</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NEW: Confirm Password field -->
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="signupConfirmPassword" class="form-control"
+                                placeholder="Re-enter password" required minlength="6">
+                            <button type="button" class="toggle-password-btn"
+                                data-target="signupConfirmPassword">👁</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full-width" id="signupBtn">
+                        <span id="signupBtnText">Create Account</span>
+                        <span id="signupSpinner" class="loading-spinner hidden"></span>
+                    </button>
+                </form>
+
+                <div class="login-link">
+                    <p>Already have an account? <a href="#" onclick="showScreen('loginScreen')">Sign in here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboardScreen" class="screen">
+        <div class="container">
+            <div class="header">
+                <div class="header-title">Attendance Dashboard</div>
+                <div class="header-user">
+                    <span class="user-welcome">Welcome, <span id="userName">User</span></span>
+                    <button onclick="logout()" class="btn btn-secondary">Logout</button>
+                </div>
+            </div>
+
+            <!-- Notification Bar -->
+            <div class="notification-bar" id="notificationBar">
+                <div class="notification-container">
+                    <div class="notification-header" onclick="toggleNotifications()">
+                        <span class="notification-title">
+                            <div class="notification-icon-wrapper">
+                                <span class="notification-icon">🔔</span>
+                                <span class="notification-badge" id="notificationBadge" style="display:none">0</span>
+                            </div>
+                            <span class="notification-text">Notifications</span>
+                        </span>
+                        <div class="notification-toggle-btn">
+                            <span id="toggleIcon">▼</span>
+                        </div>
+                    </div>
+
+                    <div class="notification-list" id="notificationList" style="display: none;">
+                        <div id="notificationItems">
+                            <!-- Notifications will be populated here -->
+                        </div>
+                        <div class="notification-footer">
+                            <button class="btn btn-subtle btn-sm" onclick="markAllAsRead()">Mark all as read</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Stats Grid (shown for non-admin users) -->
+            <div class="stats-grid" id="employeeStatsGrid">
+                <div class="stat-card">
+                    <div class="stat-card-title">Today's Status</div>
+                    <div class="stat-card-value" id="todayStatus">Not Marked</div>
+                    <div class="stat-card-timing" id="todayTiming"></div>
+                </div>
+                <div class="stat-card calendar-card" onclick="openAttendanceCalendar()"
+                    style="padding: 12px; display: flex; flex-direction: column; justify-content: center; cursor: pointer;">
+                    <div id="miniCalendarContainer"
+                        style="width: 100%; height: 100%; display: flex; flex-direction: column;">Loading...</div>
+                </div>
+
+                <!-- Premium Status Card -->
+                <div class="stat-card status-card premium-glass" onclick="openMyRequests()">
+                    <div class="card-glow"></div>
+
+                    <!-- SVG Gradient Definitions -->
+                    <svg style="width:0;height:0;position:absolute;" aria-hidden="true" focusable="false">
+                        <linearGradient id="gradientWFH" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#2563eb" /> <!-- primary-color -->
+                            <stop offset="100%" stop-color="#1e40af" /> <!-- primary-darker -->
+                        </linearGradient>
+                        <linearGradient id="gradientLeaves" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#f59e0b" />
+                            <stop offset="100%" stop-color="#ef4444" />
+                        </linearGradient>
+                    </svg>
+
+                    <div class="status-header">
+                        <div class="stat-card-title" style="margin-bottom: 0;">Status Overview</div>
+                        <span class="status-action-icon">⇲</span>
+                    </div>
+
+                    <div class="status-content">
+                        <!-- WFH Section -->
+                        <div class="status-metric">
+                            <div class="progress-ring-container">
+                                <svg class="progress-ring" width="80" height="80">
+                                    <circle class="progress-ring-bg" stroke="rgba(0,0,0,0.05)" stroke-width="6"
+                                        fill="transparent" r="32" cx="40" cy="40" />
+                                    <circle class="progress-ring-fill" id="wfhRing" stroke="url(#gradientWFH)"
+                                        stroke-width="6" fill="transparent" r="32" cx="40" cy="40" />
+                                </svg>
+                                <div class="metric-icon">🏠</div>
+                            </div>
+                            <div class="metric-details">
+                                <span class="metric-value" id="statWFH">0/2</span>
+                                <span class="metric-label">WFH Available</span>
+                            </div>
+                        </div>
+
+                        <div class="vertical-divider"></div>
+
+                        <!-- Leaves Section -->
+                        <div class="status-metric">
+                            <div class="progress-ring-container">
+                                <svg class="progress-ring" width="80" height="80">
+                                    <circle class="progress-ring-bg" stroke="rgba(0,0,0,0.05)" stroke-width="6"
+                                        fill="transparent" r="32" cx="40" cy="40" />
+                                    <circle class="progress-ring-fill" id="leavesRing" stroke="url(#gradientLeaves)"
+                                        stroke-width="6" fill="transparent" r="32" cx="40" cy="40" />
+                                </svg>
+                                <div class="metric-icon">✈️</div>
+                            </div>
+                            <div class="metric-details">
+                                <span class="metric-value" id="statLeaves">0/1</span>
+                                <span class="metric-label">Leaves Used</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-title">Location Status</div>
+                    <div class="stat-card-value" id="locationStatus">Checking...</div>
+                    <div class="stat-card-timing" id="locationDistance"></div>
+                </div>
+            </div>
+
+            <!-- Admin Stats Grid (shown only for admin users) -->
+            <div class="stats-grid hidden" id="adminStatsGrid">
+                <div class="stat-card" onclick="showEmployeeSummary()">
+                    <div class="stat-card-title">📊 Employee Summary</div>
+                    <div class="stat-card-value" id="totalEmployees">0</div>
+                    <div class="stat-card-timing" id="presentToday">0 present today</div>
+                    <div class="stat-card-subtext" id="surveyorsPresent">0 surveyors present</div>
+                </div>
+
+                <div class="stat-card" onclick="openBirthdayCalendar()">
+                    <div class="stat-card-title">🎂 Birthday Calendar</div>
+                    <div class="stat-card-value" id="upcomingBirthdays">0</div>
+                    <div class="stat-card-timing">Upcoming this month</div>
+                    <div class="stat-card-subtext">Click to view calendar</div>
+                </div>
+                <div class="stat-card" onclick="openRequestsModal()">
+                    <div class="stat-card-title">📋 Requests</div>
+                    <div class="stat-card-value" id="pendingRequests">0</div>
+                    <div class="stat-card-timing">Pending approvals</div>
+                    <div class="stat-card-subtext">WFH & Leave requests</div>
+                </div>
+                <div class="stat-card" onclick="openTaskManager()" id="taskManagerCard">
+                    <div class="stat-card-title">📝 Task Manager</div>
+                    <div class="stat-card-value" id="activeTasks">0</div>
+                    <div class="stat-card-timing">Active tasks</div>
+                    <div class="stat-card-subtext">Trello-style board</div>
+                </div>
+                <!-- Intelligence Hub Card -->
+                <div class="stat-card intelligence-hub-card">
+                    <div class="intel-header">
+                        <div class="stat-card-title">🔮 Intelligence Hub</div>
+                        <div class="intel-trend-badge" id="predictionTrendBadge">--</div>
+                    </div>
+                    <div class="intel-body">
+                        <div class="intel-main">
+                            <div class="stat-card-value" id="predictedAttendanceHub">--%</div>
+                            <div class="stat-card-timing" id="predictionTargetHub">Forecast</div>
+                        </div>
+                        <div class="intel-actions">
+                            <button class="intel-action-btn" onclick="openPredictiveModal()" title="Trends">📊
+                                Trends</button>
+                            <button class="intel-action-btn" onclick="openPersonnelLookup()" title="Search">🔍
+                                Search</button>
+                        </div>
+                    </div>
+                    <div class="stat-card-subtext" id="predictionConfidenceHub"
+                        style="margin-top: 12px; border-top: 1px solid var(--gray-100); padding-top: 12px;">
+                        Confidence: --%
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions-grid">
+                <div class="action-card" onclick="startAttendanceFlow()" id="checkInCard">
+                    <span class="action-card-icon">📍</span>
+                    <div class="action-card-title">Check In</div>
+                    <div class="action-card-description">Mark your attendance with location and photo</div>
+                </div>
+                <div class="action-card hidden" onclick="showCheckOut()" id="checkOutCard">
+                    <span class="action-card-icon">🏃</span>
+                    <div class="action-card-title">Check Out</div>
+                    <div class="action-card-description">Complete your work day</div>
+                </div>
+                <div id="calendarModal" class="modal">
+                    <div class="modal-content calendar-modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Attendance Calendar – <span id="calendarMonthLabel"></span></h3>
+                            <button class="modal-close" onclick="closeModal('calendarModal')"
+                                title="Close">&times;</button>
+                        </div>
+
+                        <div class="calendar-items-legend">
+                            <div class="legend-chip"><span class="calendar-dot cal-present"></span> Office</div>
+                            <div class="legend-chip"><span class="calendar-dot cal-client"></span> Client</div>
+                            <div class="legend-chip"><span class="calendar-dot cal-absent"></span> Absent</div>
+                            <div class="legend-chip"><span class="calendar-dot cal-wfh"></span> WFH</div>
+                            <div class="legend-chip"><span class="calendar-dot cal-half"></span> Half Day</div>
+                        </div>
+
+                        <div id="calendarGrid" class="calendar-grid" style="margin-top:12px;"></div>
+
+                        <div style="text-align:center;margin-top:24px;">
+                            <button class="btn btn-secondary btn-full-width" onclick="closeModal('calendarModal')">Close
+                                Calendar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW: Date Request Modal -->
+                <div id="dateRequestModal" class="modal">
+                    <div class="modal-content" style="max-width:380px;">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Request for <span id="requestDateLabel"></span></h3>
+                            <button class="modal-close" onclick="closeModal('dateRequestModal')">&times;</button>
+                        </div>
+
+                        <p style="font-size:13px; color:var(--gray-500); margin-bottom:16px;">Select request type:</p>
+
+                        <button class="btn btn-secondary btn-full-width mb-2" onclick="submitDateRequest('wfh')">🏠 Work
+                            From Home</button>
+                        <button class="btn btn-secondary btn-full-width mb-2" onclick="submitDateRequest('full_day')">📅
+                            Full Day Leave</button>
+
+                        <div style="margin-top:20px; border-top:1px solid var(--gray-100); padding-top:20px;">
+                            <label class="form-label">Half Day Leave:</label>
+                            <div style="display:flex; gap:12px;">
+                                <button class="btn btn-secondary" style="flex:1;"
+                                    onclick="submitDateRequest('half_day', 'first_half')">🌅 Morning</button>
+                                <button class="btn btn-secondary" style="flex:1;"
+                                    onclick="submitDateRequest('half_day', 'second_half')">🌇 Afternoon</button>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:32px; text-align:right;">
+                            <button class="btn btn-subtle" onclick="closeModal('dateRequestModal')">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-card" onclick="openMyTasks()" id="myTasksCard">
+                    <span class="action-card-icon">📝</span>
+                    <div class="action-card-title">My Tasks</div>
+                    <div class="action-card-description">View and manage your assigned tasks</div>
+                </div>
+                <div class="action-card" onclick="showScreen('recordsScreen')">
+                    <span class="action-card-icon">📋</span>
+                    <div class="action-card-title">Records</div>
+                    <div class="action-card-description">View your attendance history</div>
+                </div>
+                <div class="action-card hidden" onclick="openAdminPanel()" id="adminCard">
+                    <span class="action-card-icon">✍️</span>
+                    <div class="action-card-title">Admin Panel</div>
+                    <div class="action-card-description">Add/Edit Users/Offices (Admin only)</div>
+                </div>
+                <div class="action-card hidden" onclick="openProfile()" id="profileCard">
+                    <span class="action-card-icon">🧑‍💻</span>
+                    <div class="action-card-title">Edit Your Details</div>
+                    <div class="action-card-description">Update your name, email, phone, password</div>
+                </div>
+                <div class="action-card" onclick="openExportModal()" id="exportCard">
+                    <span class="action-card-icon">📊</span>
+                    <div class="action-card-title">Export Attendance</div>
+                    <div class="action-card-description">Select date range to export attendance records (Admin only)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Edit Attendance Modal -->
+    <div id="editAttendanceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Attendance Status</h3>
+                <button class="modal-close" onclick="closeModal('editAttendanceModal')">&times;</button>
+            </div>
+
+            <p id="editAttInfo" style="margin-bottom: 20px; font-size: 14px; color: var(--gray-600);">
+                <!-- Filled by JS with employee + date -->
+            </p>
+
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select id="editAttStatus" class="form-control">
+                    <option value="present">Present</option>
+                    <option value="half_day">Half Day</option>
+                    <option value="wfh">Work From Home</option>
+                    <option value="client">Client</option>
+                    <option value="absent">Absent</option>
+                </select>
+            </div>
+
+            <div id="editAttMsg" style="margin-top: 12px; font-size: 13px; color: var(--gray-600);">
+            </div>
+
+            <div style="display:flex; gap:12px; justify-content:flex-end; margin-top: 32px;">
+                <button class="btn btn-subtle" onclick="closeModal('editAttendanceModal')">
+                    Cancel
+                </button>
+                <button class="btn btn-primary" id="editAttSaveBtn" onclick="submitEditAttendance()">
+                    <span id="editAttSaveText">Save Changes</span>
+                    <span id="editAttSpinner" class="loading-spinner hidden"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Screen (Edit Your Details) -->
+    <div id="profileScreen" class="screen">
+        <div class="container">
+            <div class="header">
+                <div class="header-title">Edit Your Details</div>
+                <button onclick="showScreen('dashboardScreen')" class="btn btn-secondary">← Back</button>
+            </div>
+
+            <div class="card" style="max-width:100%;margin:0 auto;">
+
+                <!-- 1. ACCOUNT / OFFICIAL DETAILS -->
+                <h3>Account Details</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input id="profileName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Official Email</label>
+                        <input id="profileEmail" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Mobile</label>
+                        <input id="profilePhone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <input id="profileDepartment" class="form-control" disabled>
+                    </div>
+                </div>
+
+                <!-- ADDED: Primary Office Field -->
+                <div class="form-group">
+                    <label class="form-label">Primary Office</label>
+                    <select id="profilePrimaryOffice" class="form-control">
+                        <option value="">Select Office</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Change Password (optional)</label>
+                    <input id="profilePassword" type="password" class="form-control"
+                        placeholder="Leave blank to keep current">
+                </div>
+
+                <hr>
+
+                <!-- 2. PERSONAL INFORMATION -->
+                <h3>Personal Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Personal Email</label>
+                        <input id="profilePersonalEmail" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date of Birth</label>
+                        <input id="profileDob" type="date" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select id="profileGender" class="form-control">
+                            <option value="">Select</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                            <option value="prefer_not_to_say">Prefer not to say</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Marital Status</label>
+                        <select id="profileMaritalStatus" class="form-control">
+                            <option value="">Select</option>
+                            <option value="single">Single</option>
+                            <option value="married">Married</option>
+                            <option value="divorced">Divorced</option>
+                            <option value="widowed">Widowed</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- 3. CONTACT & ADDRESS -->
+                <h3>Contact & Address</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Alternate Number</label>
+                        <input id="profileAlternateNumber" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Emergency Contact Name</label>
+                        <input id="profileEmergencyName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Emergency Contact Phone</label>
+                        <input id="profileEmergencyPhone" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Home Address</label>
+                    <textarea id="profileHomeAddress" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Current Address</label>
+                    <textarea id="profileCurrentAddress" class="form-control" rows="2"></textarea>
+                </div>
+
+                <hr>
+
+                <!-- 4. EMPLOYMENT & ROLE -->
+                <h3>Employment & Role</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Date of Joining</label>
+                        <input id="profileDoj" type="date" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Reporting Manager / Lead</label>
+                        <input id="profileReportingMgr" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Skill Set</label>
+                    <textarea id="profileSkillSet" class="form-control" rows="2"
+                        placeholder="e.g. Java, React, SQL, Communication"></textarea>
+                </div>
+
+
+                <hr>
+
+                <!-- 5. BANK & PAYROLL -->
+                <h3>Bank & Payroll Details</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Bank Account Number</label>
+                        <input id="profileBankAccount" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bank Name</label>
+                        <input id="profileBankName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">IFSC Code</label>
+                        <input id="profileBankIfsc" class="form-control">
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- 6. EDUCATION & QUALIFICATIONS -->
+                <h3>Education & Qualifications</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Highest Qualification</label>
+                        <input id="profileHighestQualification" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Qualification Notes (optional)</label>
+                    <textarea id="profileQualificationNotes" class="form-control" rows="2"></textarea>
+                </div>
+
+                <hr>
+
+                <!-- 7. FAMILY & DEPENDENTS -->
+                <h3>Family & Dependents</h3>
+                <div class="form-group">
+                    <label class="form-label">Family Members Details</label>
+                    <textarea id="profileFamilyDetails" class="form-control" rows="3"
+                        placeholder="Name - Relation - Phone, one per line"></textarea>
+                </div>
+
+                <hr>
+                <!-- 7.1. USER IDENTITY -->
+                <h3>User Identity</h3>
+                <label class="form-label">
+                    <input type="checkbox" id="chkDocIdentity" onchange="toggleDocRow('Identity')">
+                    Photo & Signature Upload
+                </label>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">User Photo</label>
+                        <input type="file" id="userPhotoFile" accept="image/*" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Signature</label>
+                        <input type="file" id="userSignatureFile" accept="image/*" class="form-control">
+                    </div>
+                </div>
+                <hr>
+
+                <!-- 8. DOCUMENTS & CERTIFICATES -->
+                <h3>Documents & Certificates</h3>
+
+                <!-- Identity Documents -->
+                <h4 style="margin-top:8px;">Identity Documents</h4>
+
+                <div class="doc-row">
+                    <label class="form-label">
+                        <input type="checkbox" id="chkDocAadhar" onchange="toggleDocRow('Aadhar')">
+                        Aadhaar Card
+                    </label>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Aadhaar Number</label>
+                            <input id="docAadharNumber" class="form-control" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Aadhaar PDF</label>
+                            <input type="file" id="docAadharFile" class="form-control" accept="application/pdf"
+                                disabled>
+                            <small class="text-muted">
+                                Please upload PDF as <code>&lt;username&gt;_aadhar.pdf</code> (e.g.
+                                <code>employee_aadhar.pdf</code>)
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="doc-row">
+                    <label class="form-label">
+                        <input type="checkbox" id="chkDocPan" onchange="toggleDocRow('Pan')">
+                        PAN Card
+                    </label>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">PAN Number</label>
+                            <input id="docPanNumber" class="form-control" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">PAN PDF</label>
+                            <input type="file" id="docPanFile" class="form-control" accept="application/pdf" disabled>
+                            <small class="text-muted">
+                                Please upload PDF as <code>&lt;username&gt;_pan.pdf</code> (e.g.
+                                <code>employee_pan.pdf</code>)
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="doc-row">
+                    <label class="form-label">
+                        <input type="checkbox" id="chkDocOtherId" onchange="toggleDocRow('OtherId')">
+                        Other ID Document
+                    </label>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Document Name</label>
+                            <input id="docOtherIdName" class="form-control" placeholder="e.g. Driving License" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Document Number</label>
+                            <input id="docOtherIdNumber" class="form-control" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Document PDF</label>
+                            <input type="file" id="docOtherIdFile" class="form-control" accept="application/pdf"
+                                disabled>
+                            <small class="text-muted">
+                                Please upload PDF as <code>&lt;username&gt;_&lt;docname&gt;.pdf</code>
+                                (e.g. <code>employee_drivinglicense.pdf</code>)
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Qualification Documents -->
+                <h4 style="margin-top:8px;">Qualification Documents</h4>
+
+                <div class="doc-row">
+                    <label class="form-label">
+                        <input type="checkbox" id="chkQualHighest" onchange="toggleDocRow('QualHighest')">
+                        Highest Qualification Certificate
+                    </label>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Qualification Name</label>
+                            <input id="qualHighestName" class="form-control" placeholder="e.g. B.Tech, MBA" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Certificate / Reg No. (optional)</label>
+                            <input id="qualHighestNumber" class="form-control" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Certificate PDF</label>
+                            <input type="file" id="qualHighestFile" class="form-control" accept="application/pdf"
+                                disabled>
+                            <small class="text-muted">
+                                Suggested file name: <code>&lt;username&gt;_highestqualification.pdf</code>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="doc-row">
+                    <label class="form-label">
+                        <input type="checkbox" id="chkQualProfessional" onchange="toggleDocRow('QualProfessional')">
+                        Professional Certificate
+                    </label>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Certificate Name</label>
+                            <input id="qualProfessionalName" class="form-control" placeholder="e.g. AWS, Azure"
+                                disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Certificate ID / Reg No. (optional)</label>
+                            <input id="qualProfessionalNumber" class="form-control" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Certificate PDF</label>
+                            <input type="file" id="qualProfessionalFile" class="form-control" accept="application/pdf"
+                                disabled>
+                            <small class="text-muted">
+                                Suggested file name: <code>&lt;username&gt;_professionalcert.pdf</code>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="doc-row">
+                    <label class="form-label">
+                        <input type="checkbox" id="chkQualOther" onchange="toggleDocRow('QualOther')">
+                        Other Qualification Document
+                    </label>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Document Name</label>
+                            <input id="qualOtherName" class="form-control" placeholder="e.g. Diploma, Workshop"
+                                disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Details / Number (optional)</label>
+                            <input id="qualOtherNumber" class="form-control" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Document PDF</label>
+                            <input type="file" id="qualOtherFile" class="form-control" accept="application/pdf"
+                                disabled>
+                            <small class="text-muted">
+                                Please upload PDF as <code>&lt;username&gt;_&lt;docname&gt;.pdf</code>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary" style="margin-top:8px;" onclick="uploadProfileDocuments()">
+                    Upload Selected Documents
+                </button>
+                <div id="myDocumentsList" class="card" style="margin-top:20px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <h3>My Uploaded Documents</h3>
+                        <button class="btn btn-danger btn-sm" onclick="deleteSelectedDocuments()">
+                            🗑 Delete Selected
+                        </button>
+                    </div>
+
+                    <div id="myDocsEmpty" class="text-muted">No documents uploaded.</div>
+                    <div id="myDocsGrid" class="my-docs-grid hidden"></div>
+                </div>
+
+
+                <div id="profileDocsMsg" style="font-size:12px;margin-top:4px;color:var(--gray-600);"></div>
+
+                <div class="text-center" style="margin-top:16px;">
+                    <button class="btn btn-primary" onclick="saveProfile()">
+                        <span id="profileSaveText">Save All Details</span>
+                        <span id="profileSaveSpinner" class="loading-spinner hidden"></span>
+                    </button>
+                </div>
+                <div id="profileMsg" style="margin-top:8px;color:var(--gray-700);font-size:13px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Screen -->
+    <div id="attendanceScreen" class="screen">
+        <div class="container">
+            <div class="header">
+                <div class="header-title">Mark Attendance</div>
+                <button onclick="showScreen('dashboardScreen')" class="btn btn-secondary">← Back</button>
+            </div>
+
+            <div class="card">
+                <!-- Choice row: WFH / Office / Client -->
+                <div id="typeSelectionSection" style="margin-top: 8px;">
+                    <h3>Select Attendance Type:</h3>
+                    <div class="office-selection" id="typeSelection">
+                        <!-- inside the WFH card -->
+                        <div class="office-card" onclick="onWFHCardClick(event)" id="wfhOption">
+
+                            <span class="action-card-icon">🏠</span>
+                            <h3>Work From Home</h3>
+                            <p id="wfhStatus">Checking availability...</p>
+
+                            <!-- add this line -->
+                            <button id="wfhRequestBtn" class="btn btn-secondary"
+                                style="display:none; margin-top:8px; background-color: #1d4ed8;"
+                                onclick="requestWFHExtension(event)">Request WFH</button>
+                        </div>
+
+
+                        <div class="office-card" onclick="selectType('office', event)">
+                            <span class="action-card-icon">🏢</span>
+                            <h3>Office Work</h3>
+                            <p>Shows offices after you tap</p>
+                        </div>
+
+                        <div class="office-card" onclick="selectType('client', event)">
+                            <span class="action-card-icon">📍</span>
+                            <h3>Client Location</h3>
+                            <p>No geofence required</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Offices (hidden until user picks "Office Work") -->
+                <div id="officeBlock" style="display:none; margin-top: 24px;">
+                    <h3>Select Office:</h3>
+                    <p style="color: var(--gray-500); margin-bottom: 12px;">
+                        Only offices within range will be enabled
+                    </p>
+                    <div class="office-selection" id="officeSelection">
+                        <!-- populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Camera -->
+                <div id="cameraSection" class="hidden" style="margin-top: 24px;">
+                    <h3>Take Your Photo:</h3>
+                    <p style="color: var(--gray-500); margin-bottom: 12px;">Photo is required for verification</p>
+
+                    <div class="camera-container mirrored">
+                        <video id="video" autoplay muted playsinline style="display:none;"></video>
+                        <canvas id="overlayCanvas" style="position:absolute; top:0; left:0; display:none;"></canvas>
+                        <img id="capturedPhoto" style="display:none;">
+                        <canvas id="photoCanvas" style="display:none;"></canvas>
+                        <div id="cameraPlaceholder"
+                            style="display:flex;align-items:center;justify-content:center;height:100%;background:#f3f4f6;color:#6b7280;">
+                            Click "Start Camera" to begin
+                        </div>
+                    </div>
+
+                    <div class="camera-controls">
+                        <button onclick="startCamera()" class="btn btn-primary" id="startCameraBtn">📷 Start
+                            Camera</button>
+                        <button onclick="capturePhoto()" class="btn btn-success" id="captureBtn"
+                            style="display:none;">📸 Capture</button>
+                        <button onclick="retakePhoto()" class="btn btn-secondary" id="retakeBtn"
+                            style="display:none;">🔄 Retake</button>
+                    </div>
+
+                    <div class="text-center" style="margin-top: 16px;">
+                        <button onclick="markAttendance()" class="btn btn-success" id="markBtn" style="display:none;">
+                            <span id="markBtnText">✅ Mark Attendance</span>
+                            <span id="markSpinner" class="loading-spinner hidden"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Records Screen -->
+    <div id="recordsScreen" class="screen">
+        <div class="container">
+            <div class="header">
+                <div class="header-title">Attendance Records</div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <span id="adminExportNote" class="hidden" style="color: var(--gray-500); font-size: 14px;">(Admin:
+                        Export available)</span>
+                    <button onclick="showScreen('dashboardScreen')" class="btn btn-secondary">← Back</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div id="recordsContent">
+                    <div class="text-center" style="padding: 40px;">
+                        <div class="loading-spinner" style="margin: 0 auto 16px; width: 24px; height: 24px;"></div>
+                        <p>Loading attendance records...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Admin Panel -->
+    <div id="adminScreen" class="screen">
+        <div class="container">
+            <div class="header">
+                <div class="header-title">Admin Panel</div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <button onclick="showScreen('dashboardScreen')" class="btn btn-secondary">← Back</button>
+                </div>
+            </div>
+
+            <div class="admin-grid">
+                <!-- Add Office -->
+                <div class="card">
+                    <h3 style="margin-bottom:12px;">Add New Office</h3>
+                    <div class="form-group">
+                        <label class="form-label">Office ID</label>
+                        <input id="newOfficeId" class="form-control" placeholder="e.g., 106 or HQ (must be unique)">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Office Name</label>
+                        <input id="newOfficeName" class="form-control" placeholder="e.g., Head Office">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <input id="newOfficeAddress" class="form-control" placeholder="Office address">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Latitude</label>
+                            <input id="newOfficeLat" class="form-control" placeholder="e.g., 28.6139">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Longitude</label>
+                            <input id="newOfficeLng" class="form-control" placeholder="e.g., 77.2090">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Radius (meters)</label>
+                        <input id="newOfficeRadius" class="form-control" placeholder="e.g., 100">
+                    </div>
+                    <div style="display:flex; gap:8px; margin-top:8px;">
+                        <button class="btn btn-primary" onclick="submitNewOffice()">➕ Add Office</button>
+                        <button class="btn" onclick="clearOfficeForm()">Reset</button>
+                    </div>
+                    <div id="addOfficeMsg" style="margin-top:8px;color:var(--gray-700);font-size:13px;"></div>
+                </div>
+
+                <!-- Add User -->
+                <div class="card">
+                    <h3 style="margin-bottom:12px;">Add New User</h3>
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input id="newUserName" class="form-control" placeholder="e.g., John Doe">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input id="newUserUsername" class="form-control" placeholder="username">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Mobile Number</label>
+                            <input id="newUserPhone" class="form-control" placeholder="10-digit number">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input id="newUserEmail" class="form-control" placeholder="email@example.com">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Department</label>
+                            <select id="newUserDepartment" class="form-control">
+                                <option value="">Select Department</option>
+                                <option>IT</option>
+                                <option>HR</option>
+                                <option>Surveyors</option>
+                                <option>Accounts</option>
+                                <option>Growth</option>
+                                <option>Others</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Primary Office</label>
+                            <select id="newUserPrimaryOffice" class="form-control">
+                                <option value="">Loading offices…</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Role</label>
+                            <select id="newUserRole" class="form-control">
+                                <option value="employee">Employee</option>
+                                <option value="manager">Manager</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input id="newUserPassword" type="password" class="form-control" placeholder="min 6 chars">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Reporting Manager</label>
+                        <select id="newUserReportingManager" class="form-control">
+                            <option value="none">No Manager</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-success" onclick="submitNewUser()">➕ Add User</button>
+                        <button class="btn" onclick="clearUserForm()">Reset</button>
+                    </div>
+                    <div id="addUserMsg" style="margin-top:8px;color:var(--gray-700);font-size:13px;"></div>
+                </div>
+            </div>
+
+
+            <!-- Lists -->
+            <div style="display:grid; grid-template-columns:1fr; gap:20px; width: auto">
+                <div class="card">
+                    <h3>Offices <small id="officeCount" style="color:var(--gray-500); font-size:10px;"></small></h3>
+                    <div id="adminOfficesList" style="margin-top:12px;"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Users Management <small id="userCount" style="color:var(--gray-500); font-size:10px;"></small>
+                    </h3>
+                    <div class="table-responsive" id="adminUsersListWrapper">
+                        <table id="adminUsersTable" class="records-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:60px">ID</th>
+                                    <th>Name</th>
+                                    <th>Username</th>
+                                    <th>Mobile</th>
+                                    <th>Department</th>
+                                    <th>Role</th>
+                                    <th>Manager</th>
+                                    <th style="width:160px">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersList"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="header-title">User Details / Profiles</div>
+                        <button class="btn btn-secondary" onclick="refreshAdminProfiles()">Refresh</button>
+                        <button class="btn btn-primary" onclick="exportAllProfilesExcel()">Export All (Excel)</button>
+                    </div>
+                    <div id="adminProfilesList"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="successModal" class="modal">
+        <div class="modal-content" style="text-align: center; max-width: 400px;">
+            <div style="font-size: 64px; margin-bottom: 24px;">✅</div>
+            <h3 class="modal-title" style="margin-bottom: 8px; display: block; width: 100%;">Success!</h3>
+            <p id="successMessage" style="color: var(--gray-600); margin-bottom: 32px;">Operation completed
+                successfully.</p>
+            <button class="btn btn-primary btn-full-width" onclick="closeModal('successModal')">Continue</button>
+        </div>
+    </div>
+
+    <!-- Check Out Confirmation Modal -->
+    <div id="checkOutModal" class="modal">
+        <div class="modal-content" style="max-width: 440px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Ready to Check Out?</h3>
+                <button class="modal-close" onclick="closeModal('checkOutModal')">&times;</button>
+            </div>
+
+            <p id="checkOutDetails" style="color: var(--gray-600); margin-bottom: 20px; font-size: 14px;"></p>
+
+            <div id="halfDayWarning" class="hidden"
+                style="background: #fff7ed; border: 1px solid #ffedd5; padding: 16px; border-radius: var(--radius-md); margin-bottom: 24px; color: #9a3412;">
+                <h4 style="margin: 0 0 8px; font-size: 14px; display: flex; align-items: center; gap: 8px;">⚠️ Half Day
+                    Warning</h4>
+                <p style="margin: 0; font-size: 13px;">You have worked less than 8 hours. This will be marked as a half
+                    day.</p>
+            </div>
+
+            <div style="display:flex; gap:12px; margin-top: 32px;">
+                <button class="btn btn-subtle" style="flex:1;" onclick="closeModal('checkOutModal')">Cancel</button>
+                <button class="btn btn-primary" style="flex:2;" id="confirmCheckOutBtn" onclick="confirmCheckOut()">
+                    <span id="checkOutBtnText">Confirm Check Out</span>
+                    <span id="checkOutSpinner" class="loading-spinner hidden"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Documents Modal -->
+    <div id="docsModal" class="docs-modal">
+        <div class="docs-modal-content">
+
+            <div id="docsModalTitle" class="docs-modal-header">
+                Documents
+            </div>
+
+            <div id="docsList" class="docs-list"></div>
+
+            <div class="docs-actions">
+                <button class="btn btn-secondary" onclick="closeDocsModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="downloadSelectedDocs()">Download</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Export Attendance Modal -->
+    <!-- Camera Permission Modal -->
+    <div id="cameraPermissionModal" class="modal">
+        <div class="modal-content" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Camera Access Required</h3>
+                <button class="modal-close" onclick="closeCameraPermissionModal()">&times;</button>
+            </div>
+
+            <div
+                style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; text-align: center; color: white;">
+                <div style="font-size: 48px; margin-bottom: 16px;">📷</div>
+                <p style="margin: 0; font-size: 15px; opacity: 0.95; line-height: 1.5;">To verify your identity and mark
+                    attendance, we need access to your camera.</p>
+            </div>
+
+            <div
+                style="background: var(--gray-50); border-radius: var(--radius-md); padding: 20px; margin-bottom: 24px; border: 1px solid var(--gray-100);">
+                <h4 style="margin: 0 0 12px; font-size: 14px; color: var(--gray-900);">How to enable access:</h4>
+                <ul
+                    style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--gray-600); display: flex; flex-direction: column; gap: 8px;">
+                    <li><strong>Chrome:</strong> Click the camera icon 📷 in address bar → Select "Allow"</li>
+                    <li><strong>Safari:</strong> Safari menu → Settings for This Website → Camera → Allow</li>
+                    <li><strong>Firefox:</strong> Click the camera icon in address bar → Allow</li>
+                </ul>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button class="btn btn-subtle" onclick="closeCameraPermissionModal()">Cancel</button>
+                <button class="btn btn-primary" id="enableCameraBtn" onclick="requestCameraPermission()">
+                    <span>Enable Camera</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Attendance Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Export Attendance Records</h3>
+                <button class="modal-close" onclick="closeModal('exportModal')">&times;</button>
+            </div>
+
+            <p style="margin-bottom: 24px; color: var(--gray-600); font-size: 14px;">
+                Select the filters and date range for your report.
+            </p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">From Date</label>
+                    <input type="date" id="exportFromDate" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">To Date</label>
+                    <input type="date" id="exportToDate" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Employee</label>
+                    <select id="exportUserSelect" class="form-control">
+                        <option value="all">All Employees</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select id="exportTypeSelect" class="form-control">
+                        <option value="all">All Types</option>
+                        <option value="office">Office</option>
+                        <option value="wfh">WFH</option>
+                        <option value="client">Client</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 8px;">
+                <label
+                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; font-size: 14px; font-weight: 500; color: var(--gray-700);">
+                    <input type="checkbox" id="exportIncludePhotos" checked style="width: 18px; height: 18px;">
+                    Include photos in export
+                </label>
+            </div>
+
+            <div id="exportError"
+                style="background: #fee2e2; color: #b91c1c; padding: 12px; border-radius: var(--radius-md); font-size: 13px; margin: 20px 0; display: none; border: 1px solid #fecaca;">
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 32px;">
+                <button onclick="closeModal('exportModal')" class="btn btn-subtle">Cancel</button>
+                <button onclick="confirmExport()" class="btn btn-primary" id="confirmExportBtn"
+                    style="min-width: 180px;">
+                    <span id="exportBtnText">Get Report</span>
+                    <span id="exportSpinner" class="loading-spinner hidden"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="birthdayCalendarModal" class="modal">
+        <div class="modal-content calendar-modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🎂 Birthday Calendar</h3>
+                <button class="modal-close" onclick="closeModal('birthdayCalendarModal')">&times;</button>
+            </div>
+            <div id="birthdayCalendarContent">
+                <div class="text-center" style="padding: 40px;">
+                    <div class="loading-spinner" style="margin: 0 auto 16px;"></div>
+                    <p>Loading birthday calendar...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests Modal -->
+    <div id="requestsModal" class="modal">
+        <div class="modal-content" style="max-width: 1000px; padding: 0;">
+            <div class="modal-header" style="padding: 24px 24px 0 24px; border-bottom: none;">
+                <h3 class="modal-title">Leave & WFH Requests</h3>
+                <button class="modal-close" onclick="closeModal('requestsModal')">&times;</button>
+            </div>
+            <div id="requestsContent">
+                <div class="text-center" style="padding: 40px;">
+                    <div class="loading-spinner" style="margin: 0 auto 16px;"></div>
+                    <p>Loading requests...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Manager Modal -->
+    <div id="taskManagerModal" class="modal">
+        <div class="modal-content" style="max-width: 1200px; padding: 0;">
+            <div class="modal-header" style="padding: 24px; background: var(--gray-50);">
+                <div>
+                    <h3 class="modal-title">Task Manager</h3>
+                    <p style="margin: 4px 0 0; color: var(--gray-500); font-size: 13px;">Manage and allocate team tasks
+                    </p>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <button class="btn btn-primary btn-sm" onclick="addNewTask()">+ Add Task</button>
+                    <button class="btn btn-secondary btn-sm" onclick="refreshTasks()">Refresh</button>
+                    <button class="modal-close" onclick="closeModal('taskManagerModal')">&times;</button>
+                </div>
+            </div>
+
+            <div style="padding: 24px;">
+                <div class="premium-task-board">
+                    <div class="premium-column" id="todoColumn">
+                        <div class="premium-column-header">
+                            <h4>To Do</h4>
+                            <span class="premium-task-count" id="todoCount">0</span>
+                        </div>
+                        <div class="premium-task-list" id="todoList">
+                            <div class="text-muted text-center p-3">No tasks</div>
+                        </div>
+                    </div>
+
+                    <div class="premium-column" id="inProgressColumn">
+                        <div class="premium-column-header">
+                            <h4>In Progress</h4>
+                            <span class="premium-task-count" id="inProgressCount">0</span>
+                        </div>
+                        <div class="premium-task-list" id="inProgressList">
+                            <div class="text-muted text-center p-3">No tasks</div>
+                        </div>
+                    </div>
+
+                    <div class="premium-column" id="completedColumn">
+                        <div class="premium-column-header">
+                            <h4>Completed</h4>
+                            <span class="premium-task-count" id="completedCount">0</span>
+                        </div>
+                        <div class="premium-task-list" id="completedList">
+                            <div class="text-muted text-center p-3">No tasks</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Tasks Modal (Employee Only) -->
+    <div id="myTasksModal" class="modal">
+        <div class="modal-content" style="max-width: 1200px; padding: 0;">
+            <div class="modal-header" style="padding: 24px; background: var(--gray-50);">
+                <div>
+                    <h3 class="modal-title">My Tasks</h3>
+                    <p style="margin: 4px 0 0; color: var(--gray-500); font-size: 13px;">Manage your daily assignments
+                    </p>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <button class="btn btn-primary btn-sm" onclick="addNewTask()">+ Add Task</button>
+                    <button class="btn btn-secondary btn-sm" onclick="refreshMyTasks()">Refresh</button>
+                    <button class="modal-close" onclick="closeModal('myTasksModal')">&times;</button>
+                </div>
+            </div>
+
+            <div style="padding: 24px;">
+                <div class="premium-task-board">
+                    <div class="premium-column" id="myTodoColumn">
+                        <div class="premium-column-header">
+                            <h4>To Do</h4>
+                            <span class="premium-task-count" id="myTodoCount">0</span>
+                        </div>
+                        <div class="premium-task-list" id="myTodoList">
+                            <div class="text-muted text-center p-3">No tasks</div>
+                        </div>
+                    </div>
+
+                    <div class="premium-column" id="myInProgressColumn">
+                        <div class="premium-column-header">
+                            <h4>In Progress</h4>
+                            <span class="premium-task-count" id="myInProgressCount">0</span>
+                        </div>
+                        <div class="premium-task-list" id="myInProgressList">
+                            <div class="text-muted text-center p-3">No tasks</div>
+                        </div>
+                    </div>
+
+                    <div class="premium-column" id="myCompletedColumn">
+                        <div class="premium-column-header">
+                            <h4>Completed</h4>
+                            <span class="premium-task-count" id="myCompletedCount">0</span>
+                        </div>
+                        <div class="premium-task-list" id="myCompletedList">
+                            <div class="text-muted text-center p-3">No tasks</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Detail Modal (with Comments) -->
+    <div id="taskDetailModal" class="modal">
+        <div class="modal-content" style="max-width: 640px; padding: 0;">
+            <div class="modal-header" style="padding: 24px; background: var(--gray-50);">
+                <div>
+                    <h3 id="detailTaskTitle" class="modal-title">Task Details</h3>
+                    <div id="detailTaskMeta"
+                        style="margin-top: 8px; display: flex; gap: 12px; font-size: 12px; color: var(--gray-500);">
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closeModal('taskDetailModal')">&times;</button>
+            </div>
+
+            <div style="padding: 24px;">
+                <div id="detailTaskDescription"
+                    style="margin-bottom: 32px; color: var(--gray-700); line-height: 1.6; font-size: 15px;">
+                </div>
+
+                <div style="border-top: 1px solid var(--gray-100); padding-top: 24px;">
+                    <h4 style="margin: 0 0 16px; font-size: 16px; font-weight: 700;">Comments</h4>
+                    <div id="taskCommentsList"
+                        style="display: flex; flex-direction: column; gap: 16px; max-height: 300px; overflow-y: auto; margin-bottom: 24px; padding-right: 8px;">
+                    </div>
+
+                    <div
+                        style="display: flex; gap: 12px; align-items: flex-end; background: var(--gray-50); padding: 16px; border-radius: var(--radius-lg); border: 1px solid var(--gray-100);">
+                        <textarea id="newTaskComment" class="form-control" rows="2" placeholder="Add a comment..."
+                            style="border: none; background: transparent; padding: 0; resize: none;"></textarea>
+                        <button class="btn btn-primary" onclick="submitTaskComment()"
+                            style="min-width: 80px;">Post</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="addTaskModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Task</h3>
+                <button class="modal-close" onclick="closeModal('addTaskModal')">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Task Title</label>
+                <input type="text" id="taskTitle" class="form-control" placeholder="What needs to be done?">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Assign To</label>
+                    <select id="taskAssignee" class="form-control">
+                        <option value="">Select Employee...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <select id="taskPriority" class="form-control">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Task Manager (Overseer)</label>
+                <select id="taskManager" class="form-control">
+                    <option value="none">No Overseer</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea id="taskDescription" class="form-control" rows="3"
+                    placeholder="Additional details..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Due Date</label>
+                <input type="date" id="taskDueDate" class="form-control">
+            </div>
+
+            <div style="display:flex; gap:12px; justify-content:flex-end; margin-top: 32px;">
+                <button class="btn btn-subtle" onclick="closeModal('addTaskModal')">Cancel</button>
+                <button class="btn btn-primary" id="saveTaskBtn" onclick="saveNewTask()" style="min-width: 140px;">
+                    <span id="saveTaskText">Create Task</span>
+                    <span id="saveTaskSpinner" class="loading-spinner hidden"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Action Modal (Calendar Click) -->
+    <div id="requestActionModal" class="modal">
+        <div class="modal-content" style="max-width: 440px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Request Time Off</h3>
+                <button class="modal-close" onclick="closeModal('requestActionModal')">&times;</button>
+            </div>
+
+            <p id="requestActionDateDisplay"
+                style="color: var(--primary-color); font-weight: 700; margin-bottom: 24px; font-size: 14px;"></p>
+
+            <input type="hidden" id="requestActionDate">
+
+            <div class="form-group">
+                <label class="form-label">Request Type</label>
+                <select id="requestType" class="form-control" onchange="toggleRequestPeriod()">
+                    <option value="wfh">Work From Home (WFH)</option>
+                    <option value="full_day">Full Day Leave</option>
+                    <option value="half_day">Half Day Leave</option>
+                </select>
+            </div>
+
+            <div class="form-group hidden" id="requestPeriodGroup">
+                <label class="form-label">Half Day Period</label>
+                <select id="requestPeriod" class="form-control">
+                    <option value="first_half">First Half (Morning)</option>
+                    <option value="second_half">Second Half (Afternoon)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Reason</label>
+                <textarea id="requestReason" class="form-control" rows="3"
+                    placeholder="Brief explanation..."></textarea>
+            </div>
+
+            <div style="display:flex; gap:12px; justify-content:flex-end; margin-top: 32px;">
+                <button class="btn btn-subtle" onclick="closeModal('requestActionModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="submitRequest()" style="min-width: 140px;">Submit
+                    Request</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Status Overview Modal (Redesigned) -->
+    <div id="myRequestsModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; padding: 0;">
+            <div class="overview-container" style="padding: 24px;">
+                <div class="modal-header" style="border-bottom: none; padding-bottom: 8px;">
+                    <div class="modal-title-group">
+                        <h3 class="modal-title">Monthly Overview</h3>
+                        <span id="modalDate"
+                            style="font-size: 13px; color: var(--gray-500); font-weight: 500; margin-top: 4px; display: block;">-</span>
+                    </div>
+                    <button class="modal-close" onclick="closeModal('myRequestsModal')">&times;</button>
+                </div>
+
+                <!-- Hero Card -->
+                <div class="overview-hero-card"
+                    style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-radius: 16px; padding: 24px; text-align: center; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); margin-bottom: 24px;">
+                    <div class="hero-content">
+                        <span class="hero-label"
+                            style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.9; margin-bottom: 8px;">TOTAL
+                            WORKING DAYS</span>
+                        <span class="hero-value" id="ovTotalDays"
+                            style="display: block; font-size: 48px; font-weight: 800; line-height: 1;">0</span>
+                        <span class="hero-sub"
+                            style="display: block; font-size: 13px; opacity: 0.9; margin-top: 4px;">This Month</span>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="overview-grid"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    <!-- Office -->
+                    <div class="stat-box"
+                        style="background: white; padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div class="stat-icon-bg"
+                            style="width: 40px; height: 40px; border-radius: 50%; background: #dcfce7; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                            🏢</div>
+                        <div class="stat-info">
+                            <span class="stat-num" id="ovOffice"
+                                style="display: block; font-size: 18px; font-weight: 700; color: var(--gray-900);">0</span>
+                            <span class="stat-label" style="font-size: 11px; color: var(--gray-500);">Office Days</span>
+                        </div>
+                    </div>
+
+                    <!-- WFH -->
+                    <div class="stat-box"
+                        style="background: white; padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div class="stat-icon-bg"
+                            style="width: 40px; height: 40px; border-radius: 50%; background: #dbeafe; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                            🏠</div>
+                        <div class="stat-info">
+                            <span class="stat-num" id="ovWFH"
+                                style="display: block; font-size: 18px; font-weight: 700; color: var(--gray-900);">0</span>
+                            <span class="stat-label" style="font-size: 11px; color: var(--gray-500);">Work From
+                                Home</span>
+                        </div>
+                    </div>
+
+                    <!-- Half Day -->
+                    <div class="stat-box"
+                        style="background: white; padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div class="stat-icon-bg"
+                            style="width: 40px; height: 40px; border-radius: 50%; background: #fef9c3; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                            ⏳</div>
+                        <div class="stat-info">
+                            <span class="stat-num" id="ovHalfDay"
+                                style="display: block; font-size: 18px; font-weight: 700; color: var(--gray-900);">0</span>
+                            <span class="stat-label" style="font-size: 11px; color: var(--gray-500);">Half Days</span>
+                        </div>
+                    </div>
+
+                    <!-- Leaves -->
+                    <div class="stat-box"
+                        style="background: white; padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div class="stat-icon-bg"
+                            style="width: 40px; height: 40px; border-radius: 50%; background: #fee2e2; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                            🏖️</div>
+                        <div class="stat-info">
+                            <span class="stat-num" id="ovLeaves"
+                                style="display: block; font-size: 18px; font-weight: 700; color: var(--gray-900);">0</span>
+                            <span class="stat-label" style="font-size: 11px; color: var(--gray-500);">Leaves
+                                Taken</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer: History Toggle -->
+                <div class="overview-footer-card" onclick="toggleHistoryView()"
+                    style="background: white; padding: 16px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border: 1px solid var(--gray-200); transition: all 0.2s ease;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="footer-icon" style="font-size: 18px;">📋</span>
+                        <div style="display: flex; flex-direction: column;">
+                            <span class="footer-text"
+                                style="font-size: 14px; font-weight: 600; color: var(--gray-900);">Request
+                                History</span>
+                            <span class="footer-sub" style="font-size: 11px; color: var(--gray-500);">View and manage
+                                your requests</span>
+                        </div>
+                    </div>
+                    <span class="footer-arrow" style="color: var(--gray-400);">→</span>
+                </div>
+            </div>
+
+            <!-- Detailed History View (Hidden by default) -->
+            <div id="historyView" class="hidden" style="background: white; border-top: 1px solid var(--gray-100);">
+
+                <!-- Blue Hero Header -->
+                <div
+                    style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 24px; display: flex; justify-content: space-between; align-items: center; color: white; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">📜</span>
+                        <div style="display: flex; flex-direction: column;">
+                            <h3
+                                style="margin: 0; font-size: 18px; font-weight: 700; color: white; letter-spacing: -0.01em;">
+                                Request History</h3>
+                            <span style="font-size: 11px; opacity: 0.8; font-weight: 500;">Past requests and
+                                approvals</span>
+                        </div>
+                    </div>
+                    <button onclick="toggleHistoryView()" style="
+                        background: rgba(255, 255, 255, 0.15); 
+                        color: white; 
+                        border: 1px solid rgba(255,255,255,0.2); 
+                        font-size: 12px; 
+                        padding: 8px 16px; 
+                        border-radius: 8px; 
+                        backdrop-filter: blur(8px);
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        font-weight: 500;
+                    ">Back to Overview</button>
+                </div>
+
+                <!-- Scrollable List Container -->
+                <div class="history-list-container" style="flex: 1; overflow-y: auto; padding: 24px;">
+                    <!-- List Header -->
+                    <div
+                        style="display: flex; justify-content: space-between; padding: 0 8px 12px 8px; border-bottom: 1px solid var(--gray-100); margin-bottom: 16px;">
+                        <span
+                            style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--gray-400); letter-spacing: 0.05em;">Request
+                            Details</span>
+                        <span
+                            style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--gray-400); letter-spacing: 0.05em;">Status</span>
+                    </div>
+
+                    <div id="myRequestsList" style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Cards will be injected here by JS -->
+                    </div>
+
+                    <div id="myRequestsEmpty" class="text-center text-muted hidden"
+                        style="padding: 32px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                        <div style="font-size: 24px; opacity: 0.3;">📂</div>
+                        <span>No requests found</span>
+                    </div>
+                </div>
+
+                <div class="text-center"
+                    style="padding: 16px 24px; border-top: 1px solid var(--gray-100); background: #f9fafb;">
+                    <button class="btn btn-secondary btn-full-width"
+                        onclick="closeModal('myRequestsModal')">Close</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div id="confirmIcon" style="font-size: 64px; margin-bottom: 24px;">⚠️</div>
+            <h3 id="confirmTitle" class="modal-title" style="display: block; width: 100%; margin-bottom: 12px;">Confirm
+                Action</h3>
+            <p id="confirmMessage" style="color: var(--gray-600); line-height: 1.6; margin-bottom: 32px;">Are you sure
+                you want to proceed?</p>
+
+            <div style="display: flex; gap: 12px;">
+                <button id="confirmCancelBtn" class="btn btn-subtle" style="flex: 1;">Cancel</button>
+                <button id="confirmOkBtn" class="btn btn-primary"
+                    style="flex: 1; background: var(--error-color); border-color: var(--error-color);">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Rejection Modal -->
+    <div id="rejectionModal" class="modal">
+        <div class="modal-content" style="max-width: 440px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Reject Request</h3>
+                <button class="modal-close" onclick="closeModal('rejectionModal')">&times;</button>
+            </div>
+
+            <div class="form-group" style="margin-top: 8px;">
+                <label class="form-label">Reason for rejection (optional):</label>
+                <input type="text" id="rejectionReasonInput" class="form-control" placeholder="Explain why..."
+                    autofocus>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 32px;">
+                <button id="rejectionCancelBtn" class="btn btn-subtle">Cancel</button>
+                <button id="rejectionOkBtn" class="btn btn-primary"
+                    style="background: var(--error-color); border-color: var(--error-color);">Confirm Rejection</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <!-- External JavaScript -->
+    {% load static %}
+    <script src="{% static 'script.js' %}"></script>
+</body>
+
+</html>
